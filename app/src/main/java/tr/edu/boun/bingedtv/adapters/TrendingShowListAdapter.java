@@ -1,4 +1,4 @@
-package tr.edu.boun.bingedtv.fragments;
+package tr.edu.boun.bingedtv.adapters;
 
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -11,12 +11,12 @@ import java.util.List;
 import tr.edu.boun.bingedtv.R;
 import tr.edu.boun.bingedtv.models.responseobjects.TrendingShow;
 
-public class MyTrendingShowRecyclerViewAdapter extends RecyclerView.Adapter<MyTrendingShowRecyclerViewAdapter.ViewHolder>
+public class TrendingShowListAdapter extends RecyclerView.Adapter<TrendingShowListAdapter.ViewHolder>
 {
 
     private final List<TrendingShow> mValues;
 
-    public MyTrendingShowRecyclerViewAdapter(List<TrendingShow> items)
+    public TrendingShowListAdapter(List<TrendingShow> items)
     {
         mValues = items;
     }
@@ -24,7 +24,7 @@ public class MyTrendingShowRecyclerViewAdapter extends RecyclerView.Adapter<MyTr
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType)
     {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.fragment_trendingshow, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.listitem_trendingshow, parent, false);
         return new ViewHolder(view);
     }
 

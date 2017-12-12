@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import tr.edu.boun.bingedtv.R;
+import tr.edu.boun.bingedtv.adapters.TrendingShowListAdapter;
 import tr.edu.boun.bingedtv.models.responseobjects.TrendingShow;
 import tr.edu.boun.bingedtv.services.restservices.RestConstants;
 import tr.edu.boun.bingedtv.services.restservices.TraktService;
@@ -100,7 +101,7 @@ public class ExploreFragment extends Fragment
                 TrendingShow[] shows = gson.fromJson(response.toString(), TrendingShow[].class);
 
                 // populate show list
-                recyclerView.setAdapter(new MyTrendingShowRecyclerViewAdapter(Arrays.asList(shows)));
+                recyclerView.setAdapter(new TrendingShowListAdapter(Arrays.asList(shows)));
             }
         }, new Response.ErrorListener()
         {

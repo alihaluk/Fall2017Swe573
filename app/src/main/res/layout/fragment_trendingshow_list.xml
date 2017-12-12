@@ -11,4 +11,4 @@
     android:layout_marginRight="16dp"
     app:layoutManager="LinearLayoutManager"
     tools:context="tr.edu.boun.bingedtv.fragments.ExploreFragment"
-    tools:listitem="@layout/fragment_trendingshow"/>
+    tools:listitem="@layout/listitem_trendingshow"/>
