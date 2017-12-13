@@ -38,9 +38,7 @@ public class MyUpcomingShow
                 "tvrage": 12662
             }
         }
-     },
-     {
-     "first_aired": "2014-07-14T02:00:00.000Z",
+     }
      */
 
     public String first_aired;

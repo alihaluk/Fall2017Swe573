@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
@@ -152,15 +153,10 @@ public class ShowOverviewActivity extends AppCompatActivity
         Gson gson = new Gson();
         String showParam = gson.toJson(param);
 
-        HashMap<String, String> params = new HashMap<String, String>();
-        params.put("shows", showParam);
-        params.put("movies", "[]");
-        params.put("episodes", "[]");
-
-        JSONObject jsonRequest =  new JSONObject();
+        JSONObject jsonRequest = null;
         try
         {
-            jsonRequest.put("shows", showParam.replaceAll("\\\\", ""));
+            jsonRequest = new JSONObject("{shows:" + showParam + "}");
         } catch(JSONException e)
         {
             e.printStackTrace();
@@ -179,7 +175,17 @@ public class ShowOverviewActivity extends AppCompatActivity
                     if (response.getJSONObject("added").getInt("shows") > 0)
                     {
                         // added !
-
+                        Toast.makeText(mContext, "Show added to watchlist successfully!", Toast.LENGTH_SHORT).show();
+                    }
+                    if (response.getJSONObject("existing").getInt("shows") > 0)
+                    {
+                        // already added !
+                        Toast.makeText(mContext, "Show has already added to watchlist!", Toast.LENGTH_SHORT).show();
+                    }
+                    if (response.getJSONObject("not_found").getJSONArray("shows").length() > 0)
+                    {
+                        // not found !
+                        Toast.makeText(mContext, "Show is unexpectedly not found, things are getting stranger here.", Toast.LENGTH_SHORT).show();
                     }
                 } catch(JSONException e)
                 {
