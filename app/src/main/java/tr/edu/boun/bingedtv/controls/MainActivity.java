@@ -95,11 +95,6 @@ public class MainActivity extends AppCompatActivity
         ft.add(R.id.fragment_container, ShowsFragment.newInstance(), "Shows")
                 .commit();
 
-        Intent i = new Intent(this, TraktAuthActivity.class);
-        startActivity(i);
-
-        TraktService.getInstance(this).Authorize();
-
 //        GetTrendingShows();
 //        GetPopularShows();
     }

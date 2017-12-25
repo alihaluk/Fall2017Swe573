@@ -39,7 +39,16 @@ public class TraktAuthActivity extends AppCompatActivity
             public void onClick(View view)
             {
                 if (edtPinCode.getText() != null && edtPinCode.getText().length() > 0)
+                {
                     GetToken(edtPinCode.getText().toString());
+                    setResult(RESULT_OK);
+                    finish();
+                }
+                else
+                {
+                    // token set error
+                    edtPinCode.setError("pincode required.");
+                }
             }
         });
     }

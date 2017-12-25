@@ -11,4 +11,4 @@
     android:layout_marginRight="16dp"
     app:layoutManager="LinearLayoutManager"
     tools:context="tr.edu.boun.bingedtv.fragments.UpcomingFragment"
-    tools:listitem="@layout/listitem_watchlist"/>
+    tools:listitem="@layout/listitem_upcomingshow"/>

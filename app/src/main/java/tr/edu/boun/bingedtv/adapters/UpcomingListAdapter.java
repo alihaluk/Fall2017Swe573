@@ -1,19 +1,21 @@
 package tr.edu.boun.bingedtv.adapters;
 
 import android.content.Context;
-import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import tr.edu.boun.bingedtv.R;
-import tr.edu.boun.bingedtv.controls.ShowOverviewActivity;
 import tr.edu.boun.bingedtv.models.responseobjects.MyUpcomingShow;
-import tr.edu.boun.bingedtv.models.responseobjects.WatchlistShow;
 
 /**
  * Created by haluks on 13.12.2017.
@@ -43,7 +45,19 @@ public class UpcomingListAdapter extends RecyclerView.Adapter<UpcomingListAdapte
         holder.mItem = mValues.get(position);
         holder.mShowTitleView.setText(mValues.get(position).show.title);
         holder.mEpisodeTitleView.setText(mValues.get(position).episode.title);
-        holder.mEpisodeAirTimeView.setText(mValues.get(position).first_aired);
+
+        DateFormat m_ISO8601Local = new SimpleDateFormat ("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        try
+        {
+            Date dt = m_ISO8601Local.parse(mValues.get(position).first_aired);
+
+            DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy", Locale.GERMAN);
+
+            holder.mEpisodeAirTimeView.setText(dateFormat.format(dt));
+        } catch(ParseException e)
+        {
+            e.printStackTrace();
+        }
 
         holder.mView.setOnClickListener(new View.OnClickListener()
         {

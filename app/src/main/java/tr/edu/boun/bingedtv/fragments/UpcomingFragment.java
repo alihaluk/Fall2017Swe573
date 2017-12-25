@@ -96,7 +96,7 @@ public class UpcomingFragment extends Fragment
 
         String start_date = dateFormat.format(cal);
 
-        String days = "7";
+        String days = "15";
 
         StringBuilder url = new StringBuilder();
         url.append(RestConstants.baseServiceAddress).append("calendars").append("/").append("my").append("/").append("shows").append("/").append(start_date).append("/").append(days);
