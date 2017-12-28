@@ -74,11 +74,12 @@
     <android.support.v7.widget.RecyclerView
         android:id="@+id/season_list"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:layout_marginLeft="16dp"
         android:layout_marginRight="16dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/overview_genres"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layoutManager="LinearLayoutManager"
         tools:context="tr.edu.boun.bingedtv.controls.ShowOverviewActivity"
         tools:listitem="@layout/listitem_watchlist"/>

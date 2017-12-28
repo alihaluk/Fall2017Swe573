@@ -1,5 +1,7 @@
 package tr.edu.boun.bingedtv.adapters;
 
+import android.content.Context;
+import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,12 +11,14 @@ import android.widget.TextView;
 import java.util.List;
 
 import tr.edu.boun.bingedtv.R;
+import tr.edu.boun.bingedtv.controls.ShowOverviewActivity;
 import tr.edu.boun.bingedtv.models.responseobjects.TrendingShow;
 
 public class TrendingShowListAdapter extends RecyclerView.Adapter<TrendingShowListAdapter.ViewHolder>
 {
 
     private final List<TrendingShow> mValues;
+    private Context mContext;
 
     public TrendingShowListAdapter(List<TrendingShow> items)
     {
@@ -24,6 +28,7 @@ public class TrendingShowListAdapter extends RecyclerView.Adapter<TrendingShowLi
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType)
     {
+        mContext = parent.getContext();
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.listitem_trendingshow, parent, false);
         return new ViewHolder(view);
     }
@@ -40,7 +45,11 @@ public class TrendingShowListAdapter extends RecyclerView.Adapter<TrendingShowLi
             @Override
             public void onClick(View v)
             {
-
+                // open show_overview page
+                int traktID = holder.mItem.show.ids.trakt;
+                Intent i = new Intent(mContext.getApplicationContext(), ShowOverviewActivity.class);
+                i.putExtra("traktID", traktID);
+                mContext.getApplicationContext().startActivity(i);
             }
         });
     }

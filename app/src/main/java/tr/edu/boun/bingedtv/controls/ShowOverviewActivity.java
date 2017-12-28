@@ -1,6 +1,8 @@
 package tr.edu.boun.bingedtv.controls;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -30,6 +32,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -118,7 +121,27 @@ public class ShowOverviewActivity extends AppCompatActivity
         } else if (item.getItemId() == R.id.overview_addWatchlist_action) {
             addToWatchlist();
         } else if (item.getItemId() == R.id.overview_watched_action) {
-            checkinShow();
+            // dialog, ask, did you binged! all episodes ? (means set watched all espidoes of the show)
+
+            AlertDialog.Builder alert = new AlertDialog.Builder(mContext).setTitle("Did you binged the show?");
+            alert.setMessage("marks as watched all episodes of the show");
+            alert.setPositiveButton("YES", new DialogInterface.OnClickListener()
+            {
+                public void onClick(DialogInterface dialog, int id)
+                {
+                    bingedAllShowEpisodes();
+                }
+            });
+            alert.setNegativeButton("NO", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i)
+                {
+
+                }
+            });
+            alert.create().show();
+
+
         }
         return false;
     }
@@ -179,6 +202,98 @@ public class ShowOverviewActivity extends AppCompatActivity
         };
 
         TraktService.getInstance(mContext).addToRequestQueue(jsObjRequest);
+    }
+
+    public void bingedAllShowEpisodes()
+    {
+        StringBuilder url = new StringBuilder();
+        url.append(RestConstants.baseServiceAddress).append("sync/history");
+        /**
+         * {
+         "shows": [
+         {
+         "title": "Breaking Bad",
+         "year": 2008,
+         "ids": {
+         "trakt": 1,
+         "slug": "breaking-bad",
+         "tvdb": 81189,
+         "imdb": "tt0903747",
+         "tmdb": 1396,
+         "tvrage": 18164
+         }
+         }
+         ]
+         }
+         */
+
+        Show[] param = new Show[1];
+        param[0] = currentShow;
+
+        Gson gson = new Gson();
+        String showParam = gson.toJson(param);
+
+        JSONObject jsonRequest = null;
+        try
+        {
+            jsonRequest = new JSONObject("{shows:" + showParam + "}");
+        } catch(JSONException e)
+        {
+            e.printStackTrace();
+        }
+
+        JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.POST, url.toString(), jsonRequest, new Response.Listener<JSONObject>()
+        {
+
+            @Override
+            public void onResponse(JSONObject response)
+            {
+                Log.d("response", response.toString());
+
+                try
+                {
+                    if (response.getJSONObject("added") != null)
+                    {
+                        Toast.makeText(mContext, "Show binged successfully!", Toast.LENGTH_SHORT).show();
+                    }
+                    else
+                    {
+                        Toast.makeText(mContext, "Something wrong, try again later.", Toast.LENGTH_SHORT).show();
+                    }
+
+
+                } catch(JSONException e)
+                {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener()
+        {
+
+            @Override
+            public void onErrorResponse(VolleyError error)
+            {
+
+            }
+        })
+        {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError
+            {
+                SharedPreferences sp = getApplicationContext().getSharedPreferences("credentials", MODE_PRIVATE);
+
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("Content-Type", "application/json");
+                params.put("trakt-api-version", "2");
+                params.put("trakt-api-key", RestConstants.clientID);
+                params.put("Authorization", "Bearer " + sp.getString("access_token",""));
+
+                return params;
+            }
+        };
+
+        TraktService.getInstance(mContext).addToRequestQueue(jsObjRequest);
+
     }
 
     public void checkinShow()
@@ -425,7 +540,7 @@ public class ShowOverviewActivity extends AppCompatActivity
         }
 
         @Override
-        public void onBindViewHolder(ViewHolder holder, int position)
+        public void onBindViewHolder(ViewHolder holder, final int position)
         {
             holder.mItem = mValues.get(position);
             holder.mTitleView.setText(mValues.get(position).title);
@@ -437,6 +552,11 @@ public class ShowOverviewActivity extends AppCompatActivity
                 public void onClick(View v)
                 {
                     // open season page
+                    Gson gson = new Gson();
+                    Intent i = new Intent(mContext.getApplicationContext(), SeasonOverviewActivity.class);
+                    i.putExtra("currentShow", gson.toJson(currentShow));
+                    i.putExtra("seasonNumber", mValues.get(position).number);
+                    mContext.getApplicationContext().startActivity(i);
                 }
             });
         }

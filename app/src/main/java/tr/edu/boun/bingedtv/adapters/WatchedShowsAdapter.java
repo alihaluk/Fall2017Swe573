@@ -1,6 +1,7 @@
 package tr.edu.boun.bingedtv.adapters;
 
 import android.content.Context;
+import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,6 +11,7 @@ import android.widget.TextView;
 import java.util.List;
 
 import tr.edu.boun.bingedtv.R;
+import tr.edu.boun.bingedtv.controls.ShowOverviewActivity;
 import tr.edu.boun.bingedtv.models.responseobjects.WatchedShowItem;
 
 /**
@@ -35,11 +37,24 @@ public class WatchedShowsAdapter extends RecyclerView.Adapter<WatchedShowsAdapte
     }
 
     @Override
-    public void onBindViewHolder(ViewHolder holder, int position)
+    public void onBindViewHolder(final ViewHolder holder, int position)
     {
         holder.mItem = mValues.get(position);
         holder.mTitleView.setText(mValues.get(position).ShowName);
         holder.mInfoView.setText(String.format("%d behind", mValues.get(position).aired - mValues.get(position).completed));
+
+        holder.mView.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                // open show_overview page
+                int traktID = Integer.parseInt(holder.mItem.ShowId);
+                Intent i = new Intent(mContext.getApplicationContext(), ShowOverviewActivity.class);
+                i.putExtra("traktID", traktID);
+                mContext.getApplicationContext().startActivity(i);
+            }
+        });
     }
 
     @Override

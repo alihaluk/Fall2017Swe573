@@ -38,6 +38,8 @@ public class ShowCommentsActivity extends AppCompatActivity
     private RecyclerView recyclerView;
 
     private int showTraktID;
+    private int seasonNumber;
+    private int episodeNumber;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -47,6 +49,8 @@ public class ShowCommentsActivity extends AppCompatActivity
 
         context = this;
         showTraktID = getIntent().getIntExtra("traktID",-1);
+        seasonNumber = getIntent().getIntExtra("seasonNumber", -1);
+        episodeNumber = getIntent().getIntExtra("episodeNumber", -1);
 
         recyclerView = findViewById(R.id.comment_list);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -57,7 +61,24 @@ public class ShowCommentsActivity extends AppCompatActivity
     public void GetShowComments()
     {
         StringBuilder url = new StringBuilder();
-        url.append(RestConstants.baseServiceAddress).append("shows").append("/").append(showTraktID).append("/").append("comments/newest");
+
+        if (episodeNumber >= 0 && seasonNumber >= 0)
+        {
+            url.append(RestConstants.baseServiceAddress).append("shows").append("/").append(showTraktID)
+                    .append("/").append("seasons").append("/").append(seasonNumber)
+                    .append("/").append("episodes").append("/").append(episodeNumber)
+                    .append("/").append("comments/newest");
+        }
+        else if (seasonNumber >= 0)
+        {
+            url.append(RestConstants.baseServiceAddress).append("shows").append("/").append(showTraktID)
+                    .append("/").append("seasons").append("/").append(seasonNumber)
+                    .append("/").append("comments/newest");
+        }
+        else {
+            url.append(RestConstants.baseServiceAddress).append("shows").append("/").append(showTraktID)
+                    .append("/").append("comments/newest");
+        }
 
         JsonArrayRequest jsObjRequest = new JsonArrayRequest(Request.Method.GET, url.toString(), null, new Response.Listener<JSONArray>()
         {
