@@ -11,6 +11,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
@@ -33,6 +34,7 @@ import tr.edu.boun.bingedtv.adapters.UpcomingListAdapter;
 import tr.edu.boun.bingedtv.adapters.WatchlistAdapter;
 import tr.edu.boun.bingedtv.models.responseobjects.MyUpcomingShow;
 import tr.edu.boun.bingedtv.models.responseobjects.WatchlistShow;
+import tr.edu.boun.bingedtv.services.TraktApiClient;
 import tr.edu.boun.bingedtv.services.restservices.RestConstants;
 import tr.edu.boun.bingedtv.services.restservices.TraktService;
 
@@ -42,6 +44,7 @@ public class UpcomingFragment extends Fragment
 {
     private Context context;
     private RecyclerView recyclerView;
+    private ProgressBar progressBar;
 
     public UpcomingFragment()
     {
@@ -75,15 +78,13 @@ public class UpcomingFragment extends Fragment
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_upcoming, container, false);
 
-        // Set the adapter
-        if(view instanceof RecyclerView)
+        context = view.getContext();
+        recyclerView = view.findViewById(R.id.list);
+        progressBar = view.findViewById(R.id.progressBar);
+
+        if(recyclerView != null)
         {
-            context = view.getContext();
-            recyclerView = (RecyclerView) view;
-
             recyclerView.setLayoutManager(new LinearLayoutManager(context));
-
-            // get trending show list
             GetUpcomingShows();
         }
         return view;
@@ -91,6 +92,7 @@ public class UpcomingFragment extends Fragment
 
     public void GetUpcomingShows()
     {
+        if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
         java.text.DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.GERMAN);
         java.util.Date cal = Calendar.getInstance().getTime();
 
@@ -101,12 +103,13 @@ public class UpcomingFragment extends Fragment
         StringBuilder url = new StringBuilder();
         url.append(RestConstants.baseServiceAddress).append("calendars").append("/").append("my").append("/").append("shows").append("/").append(start_date).append("/").append(days);
 
-        JsonArrayRequest jsObjRequest = new JsonArrayRequest(Request.Method.GET, url.toString(), null, new Response.Listener<JSONArray>()
+        TraktApiClient.TraktJsonArrayRequest jsObjRequest = new TraktApiClient.TraktJsonArrayRequest(context, Request.Method.GET, url.toString(), null, new Response.Listener<JSONArray>()
         {
 
             @Override
             public void onResponse(JSONArray response)
             {
+                if (progressBar != null) progressBar.setVisibility(View.GONE);
                 Log.d("response", response.toString());
 
                 Gson gson = new Gson();
@@ -121,24 +124,10 @@ public class UpcomingFragment extends Fragment
             @Override
             public void onErrorResponse(VolleyError error)
             {
+                if (progressBar != null) progressBar.setVisibility(View.GONE);
                 Log.e("VolleyError", error.getMessage());
             }
-        })
-        {
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError
-            {
-                SharedPreferences sp = context.getSharedPreferences("credentials", MODE_PRIVATE);
-
-                Map<String, String> params = new HashMap<String, String>();
-                params.put("Content-Type", "application/json");
-                params.put("trakt-api-version", "2");
-                params.put("trakt-api-key", RestConstants.clientID);
-                params.put("Authorization", "Bearer " + sp.getString("access_token",""));
-
-                return params;
-            }
-        };
+        });
 
         TraktService.getInstance(context).addToRequestQueue(jsObjRequest);
     }
