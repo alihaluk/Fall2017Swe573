@@ -63,26 +63,16 @@ public class WatchedShowsAdapter extends RecyclerView.Adapter<WatchedShowsAdapte
         return mValues.size();
     }
 
-    public void updateShowItem(WatchedShowItem updatedShow)
-    {
-        int showIndex = -1;
-        for(int i=0; i<mValues.size(); i++)
-        {
-            if (mValues.get(i).ShowId.equals(updatedShow.ShowId))
-            {
-                showIndex = i;
-                break;
-            }
-        }
+    public void setItems(List<WatchedShowItem> items) {
+        mValues.clear();
+        mValues.addAll(items);
+        notifyDataSetChanged();
+    }
 
-        if (showIndex < 0)
-        {
-            mValues.add(updatedShow);
-        }
-        else
-        {
-            mValues.get(showIndex).aired = updatedShow.aired;
-            mValues.get(showIndex).completed = updatedShow.completed;
+    public void updateItem(int position, WatchedShowItem item) {
+        if (position >= 0 && position < mValues.size()) {
+            mValues.set(position, item);
+            notifyItemChanged(position);
         }
     }
 

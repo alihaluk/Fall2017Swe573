@@ -4,7 +4,6 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -12,26 +11,22 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.android.volley.AuthFailureError;
-import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
 import com.google.gson.Gson;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
 
 import tr.edu.boun.bingedtv.R;
-import tr.edu.boun.bingedtv.models.responseobjects.ExtendedShowInfo;
-import tr.edu.boun.bingedtv.models.standardmediaobjects.Episode;
-import tr.edu.boun.bingedtv.models.standardmediaobjects.Ids;
+import tr.edu.boun.bingedtv.models.requestobjects.HistoryRequest;
+import tr.edu.boun.bingedtv.models.responseobjects.ExtendedEpisodeInfo;
 import tr.edu.boun.bingedtv.models.standardmediaobjects.Show;
 import tr.edu.boun.bingedtv.services.TraktApiClient;
 import tr.edu.boun.bingedtv.services.restservices.RestConstants;
@@ -48,6 +43,7 @@ public class EpisodeActivity extends AppCompatActivity
     private TextView episodeTitle;
     private TextView episodeAirTime;
     private TextView episodeDescription;
+    private ProgressBar progressBar;
 
     private Button btnEpisodeComments;
 
@@ -67,6 +63,7 @@ public class EpisodeActivity extends AppCompatActivity
         episodeTitle = findViewById(R.id.episodeView_title);
         episodeAirTime = findViewById(R.id.episodeView_airtime);
         episodeDescription = findViewById(R.id.episodeView_description);
+        progressBar = findViewById(R.id.episodeView_progressBar);
 
         btnEpisodeComments = findViewById(R.id.episodeView_btn_comments);
         btnEpisodeComments.setOnClickListener(new View.OnClickListener() {
@@ -136,35 +133,24 @@ public class EpisodeActivity extends AppCompatActivity
 
     public void GetEpisodeInfo()
     {
+        if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
         StringBuilder url = new StringBuilder();
         url.append(RestConstants.baseServiceAddress).append("shows").append("/").append(mCurrentShow.ids.trakt)
                 .append("/").append("seasons").append("/").append(mCurrentSeasonNumber)
                 .append("/").append("episodes").append("/").append(mCurrentEpisodeNumber)
                 .append("?extended=full");
 
-        TraktApiClient.TraktJsonObjectRequest jsObjRequest = new TraktApiClient.TraktJsonObjectRequest(mContext, Request.Method.GET, url.toString(), null, new Response.Listener<JSONObject>()
+        TraktApiClient.TraktJsonObjectRequest jsObjRequest = TraktApiClient.getRequest(mContext, url.toString(), new Response.Listener<JSONObject>()
         {
 
             @Override
             public void onResponse(JSONObject response)
             {
+                if (progressBar != null) progressBar.setVisibility(View.GONE);
                 Log.d("response", response.toString());
 
-                try
-                {
-                    Gson gson = new Gson();
-                    mCurrentEpisode = new ExtendedEpisodeInfo();
-                    mCurrentEpisode.season = response.getInt("season");
-                    mCurrentEpisode.number = response.getInt("number");
-                    mCurrentEpisode.title = response.getString("title");
-                    mCurrentEpisode.ids = gson.fromJson(response.getString("ids"), Ids.class);
-                    mCurrentEpisode.first_aired = response.getString("first_aired");
-                    mCurrentEpisode.overview = response.getString("overview");
-
-                } catch(JSONException e)
-                {
-                    e.printStackTrace();
-                }
+                Gson gson = new Gson();
+                mCurrentEpisode = gson.fromJson(response.toString(), ExtendedEpisodeInfo.class);
 
                 updateUI(mCurrentEpisode);
             }
@@ -174,6 +160,7 @@ public class EpisodeActivity extends AppCompatActivity
             @Override
             public void onErrorResponse(VolleyError error)
             {
+                if (progressBar != null) progressBar.setVisibility(View.GONE);
                 Log.e("VolleyError", error.getMessage());
             }
         });
@@ -183,51 +170,36 @@ public class EpisodeActivity extends AppCompatActivity
 
     public void setWatchedEpisode()
     {
-        StringBuilder url = new StringBuilder();
-        url.append(RestConstants.baseServiceAddress).append("sync/history");
-        /**
-         * {
-         "shows": [
-         {
-         "title": "Breaking Bad",
-         "year": 2008,
-         "ids": {
-         "trakt": 1,
-         "slug": "breaking-bad",
-         "tvdb": 81189,
-         "imdb": "tt0903747",
-         "tmdb": 1396,
-         "tvrage": 18164
-         }
-         }
-         ]
-         }
-         */
-
-        JSONObject jsonRequest = new JSONObject();
-        try
-        {
-            Gson gson = new Gson();
-            JSONObject ids = new JSONObject(gson.toJson(mCurrentEpisode.ids));
-            JSONObject episode = new JSONObject();
-            episode.put("ids", ids);
-
-            org.json.JSONArray episodes = new org.json.JSONArray();
-            episodes.put(episode);
-
-            jsonRequest.put("episodes", episodes);
-        } catch(JSONException e)
-        {
-            e.printStackTrace();
+        if (mCurrentEpisode == null || mCurrentEpisode.ids == null) {
+            Toast.makeText(mContext, "Episode info not loaded yet.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        TraktApiClient.TraktJsonObjectRequest jsObjRequest = new TraktApiClient.TraktJsonObjectRequest(mContext, Request.Method.POST, url.toString(), jsonRequest, new Response.Listener<JSONObject>()
+        if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
+        StringBuilder url = new StringBuilder();
+        url.append(RestConstants.baseServiceAddress).append("sync/history");
+
+        HistoryRequest requestObj = new HistoryRequest();
+        requestObj.episodes = new ArrayList<>();
+        requestObj.episodes.add(new HistoryRequest.HistoryEpisode(mCurrentEpisode.ids));
+
+        JSONObject jsonRequest = null;
+        try {
+            Gson gson = new Gson();
+            jsonRequest = new JSONObject(gson.toJson(requestObj));
+        } catch (JSONException e) {
+            e.printStackTrace();
+            if (progressBar != null) progressBar.setVisibility(View.GONE);
+            return;
+        }
+
+        TraktApiClient.TraktJsonObjectRequest jsObjRequest = TraktApiClient.postRequest(mContext, url.toString(), jsonRequest, new Response.Listener<JSONObject>()
         {
 
             @Override
             public void onResponse(JSONObject response)
             {
+                if (progressBar != null) progressBar.setVisibility(View.GONE);
                 Log.d("response", response.toString());
 
                 try
@@ -253,6 +225,7 @@ public class EpisodeActivity extends AppCompatActivity
             @Override
             public void onErrorResponse(VolleyError error)
             {
+                if (progressBar != null) progressBar.setVisibility(View.GONE);
                 Log.e("VolleyError", error.toString());
                 Toast.makeText(mContext, "Failed to mark episode as watched.", Toast.LENGTH_SHORT).show();
             }
@@ -260,37 +233,5 @@ public class EpisodeActivity extends AppCompatActivity
 
         TraktService.getInstance(mContext).addToRequestQueue(jsObjRequest);
 
-    }
-
-    public class ExtendedEpisodeInfo extends Episode
-    {
-        /**
-         * {
-         "season": 1,
-         "number": 1,
-         "title": "Winter Is Coming",
-         "ids": {
-         "trakt": 36440,
-         "tvdb": 3254641,
-         "imdb": "tt1480055",
-         "tmdb": 63056,
-         "tvrage": null
-         },
-         "number_abs": null,
-         "overview": "Ned Stark, Lord of Winterfell learns that his mentor, Jon Arryn, has died and that King Robert is on his way north to offer Ned Arryn’s position as the King’s Hand. Across the Narrow Sea in Pentos, Viserys Targaryen plans to wed his sister Daenerys to the nomadic Dothraki warrior leader, Khal Drogo to forge an alliance to take the throne.",
-         "first_aired": "2011-04-18T01:00:00.000Z",
-         "updated_at": "2014-08-29T23:16:39.000Z",
-         "rating": 9,
-         "votes": 111,
-         "comment_count": 92,
-         "available_translations": [
-         "en"
-         ],
-         "runtime": 58
-         }
-         */
-
-        public String overview;
-        public String first_aired;
     }
 }

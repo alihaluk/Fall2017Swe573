@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
@@ -33,6 +34,18 @@ public class TraktApiClient {
         }
 
         return params;
+    }
+
+    public static TraktJsonObjectRequest getRequest(Context context, String url, Response.Listener<JSONObject> listener, Response.ErrorListener errorListener) {
+        return new TraktJsonObjectRequest(context, Request.Method.GET, url, null, listener, errorListener);
+    }
+
+    public static TraktJsonObjectRequest postRequest(Context context, String url, JSONObject jsonRequest, Response.Listener<JSONObject> listener, Response.ErrorListener errorListener) {
+        return new TraktJsonObjectRequest(context, Request.Method.POST, url, jsonRequest, listener, errorListener);
+    }
+
+    public static TraktJsonArrayRequest getArrayRequest(Context context, String url, Response.Listener<JSONArray> listener, Response.ErrorListener errorListener) {
+        return new TraktJsonArrayRequest(context, Request.Method.GET, url, null, listener, errorListener);
     }
 
     public static class TraktJsonArrayRequest extends JsonArrayRequest {

@@ -2,7 +2,6 @@ package tr.edu.boun.bingedtv.fragments;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
@@ -16,12 +15,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 
-import com.android.volley.AuthFailureError;
-import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonArrayRequest;
-import com.android.volley.toolbox.JsonObjectRequest;
 import com.google.gson.Gson;
 
 import org.json.JSONArray;
@@ -29,8 +24,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 import tr.edu.boun.bingedtv.R;
 import tr.edu.boun.bingedtv.adapters.WatchedShowsAdapter;
@@ -40,8 +34,6 @@ import tr.edu.boun.bingedtv.models.responseobjects.WatchedShowItem;
 import tr.edu.boun.bingedtv.services.TraktApiClient;
 import tr.edu.boun.bingedtv.services.restservices.RestConstants;
 import tr.edu.boun.bingedtv.services.restservices.TraktService;
-
-import static android.content.Context.MODE_PRIVATE;
 
 public class ShowsFragment extends Fragment
 {
@@ -56,10 +48,6 @@ public class ShowsFragment extends Fragment
     public static ShowsFragment newInstance()
     {
         ShowsFragment fragment = new ShowsFragment();
-//        Bundle args = new Bundle();
-//        args.putString(ARG_PARAM1, param1);
-//        args.putString(ARG_PARAM2, param2);
-//        fragment.setArguments(args);
         return fragment;
     }
 
@@ -67,11 +55,6 @@ public class ShowsFragment extends Fragment
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        if(getArguments() != null)
-        {
-//            mParam1 = getArguments().getString(ARG_PARAM1);
-//            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
         setHasOptionsMenu(true);
     }
 
@@ -119,12 +102,12 @@ public class ShowsFragment extends Fragment
     public void GetWatchedShowsProgress()
     {
         if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
-        recyclerView.setAdapter(new WatchedShowsAdapter(new ArrayList<WatchedShowItem>()));
+        // Do not reset adapter here with empty list.
 
         StringBuilder url = new StringBuilder();
         url.append(RestConstants.baseServiceAddress).append("sync").append("/").append("watched").append("/").append("shows?extended=noseasons");
 
-        TraktApiClient.TraktJsonArrayRequest jsObjRequest = new TraktApiClient.TraktJsonArrayRequest(context, Request.Method.GET, url.toString(), null, new Response.Listener<JSONArray>()
+        TraktApiClient.TraktJsonArrayRequest jsObjRequest = TraktApiClient.getArrayRequest(context, url.toString(), new Response.Listener<JSONArray>()
         {
 
             @Override
@@ -136,8 +119,31 @@ public class ShowsFragment extends Fragment
                 Gson gson = new Gson();
                 WatchedShow[] shows = gson.fromJson(response.toString(), WatchedShow[].class);
 
-                for (final WatchedShow show : shows)
+                // Initialize list with items having 0 progress
+                List<WatchedShowItem> items = new ArrayList<>();
+                for (WatchedShow show : shows) {
+                    WatchedShowItem item = new WatchedShowItem();
+                    item.ShowId = show.show.ids.trakt.toString();
+                    item.ShowName = show.show.title;
+                    item.aired = 0;
+                    item.completed = 0;
+                    items.add(item);
+                }
+
+                WatchedShowsAdapter adapter = (WatchedShowsAdapter) recyclerView.getAdapter();
+                if (adapter == null) {
+                    adapter = new WatchedShowsAdapter(items);
+                    recyclerView.setAdapter(adapter);
+                } else {
+                    adapter.setItems(items);
+                }
+
+
+                for (int i = 0; i < shows.length; i++)
                 {
+                    final WatchedShow show = shows[i];
+                    final int position = i; // capture index
+
                     StringBuilder url = new StringBuilder();
                     url.append(RestConstants.baseServiceAddress)
                             .append("shows").append("/")
@@ -145,14 +151,12 @@ public class ShowsFragment extends Fragment
                             .append("/").append("progress")
                             .append("/").append("watched?hidden=false&specials=false&count_specials=false");
 
-                    TraktApiClient.TraktJsonObjectRequest jsObjRequest = new TraktApiClient.TraktJsonObjectRequest(context, Request.Method.GET, url.toString(), null, new Response.Listener<JSONObject>()
+                    TraktApiClient.TraktJsonObjectRequest jsObjRequest = TraktApiClient.getRequest(context, url.toString(), new Response.Listener<JSONObject>()
                     {
 
                         @Override
                         public void onResponse(JSONObject response)
                         {
-                            Log.d("response", response.toString());
-
                             try
                             {
                                 int aired = response.getInt("aired");
@@ -165,9 +169,9 @@ public class ShowsFragment extends Fragment
                                 item.ShowName = show.show.title;
 
                                 WatchedShowsAdapter wsa = (WatchedShowsAdapter) recyclerView.getAdapter();
-                                wsa.updateShowItem(item);
-
-                                wsa.notifyDataSetChanged();
+                                if (wsa != null) {
+                                    wsa.updateItem(position, item);
+                                }
 
                             } catch(JSONException e)
                             {
@@ -185,7 +189,6 @@ public class ShowsFragment extends Fragment
                     });
 
                     TraktService.getInstance(context).addToRequestQueue(jsObjRequest);
-
                 }
 
             }
