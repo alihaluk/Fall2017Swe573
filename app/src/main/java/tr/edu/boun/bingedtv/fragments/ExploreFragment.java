@@ -91,7 +91,7 @@ public class ExploreFragment extends Fragment
         StringBuilder url = new StringBuilder();
         url.append(RestConstants.baseServiceAddress).append("shows").append("/").append("trending");
 
-        TraktApiClient.TraktJsonArrayRequest jsObjRequest = new TraktApiClient.TraktJsonArrayRequest(context, Request.Method.GET, url.toString(), null, new Response.Listener<JSONArray>()
+        TraktApiClient.TraktJsonArrayRequest jsObjRequest = TraktApiClient.getArrayRequest(context, url.toString(), new Response.Listener<JSONArray>()
         {
 
             @Override
