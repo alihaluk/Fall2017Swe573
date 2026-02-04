@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
@@ -26,6 +27,7 @@ import java.util.Map;
 import tr.edu.boun.bingedtv.R;
 import tr.edu.boun.bingedtv.adapters.TrendingShowListAdapter;
 import tr.edu.boun.bingedtv.models.responseobjects.TrendingShow;
+import tr.edu.boun.bingedtv.services.TraktApiClient;
 import tr.edu.boun.bingedtv.services.restservices.RestConstants;
 import tr.edu.boun.bingedtv.services.restservices.TraktService;
 
@@ -33,6 +35,7 @@ public class ExploreFragment extends Fragment
 {
     private Context context;
     private RecyclerView recyclerView;
+    private ProgressBar progressBar;
 
     private int mColumnCount = 3;
 
@@ -70,15 +73,13 @@ public class ExploreFragment extends Fragment
     {
         View view = inflater.inflate(R.layout.fragment_trendingshow_list, container, false);
 
-        // Set the adapter
-        if(view instanceof RecyclerView)
+        context = view.getContext();
+        recyclerView = view.findViewById(R.id.list);
+        progressBar = view.findViewById(R.id.progressBar);
+
+        if(recyclerView != null)
         {
-            context = view.getContext();
-            recyclerView = (RecyclerView) view;
-
             recyclerView.setLayoutManager(new GridLayoutManager(context, mColumnCount));
-
-            // get trending show list
             GetTrendingShows();
         }
         return view;
@@ -86,15 +87,17 @@ public class ExploreFragment extends Fragment
 
     public void GetTrendingShows()
     {
+        if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
         StringBuilder url = new StringBuilder();
         url.append(RestConstants.baseServiceAddress).append("shows").append("/").append("trending");
 
-        JsonArrayRequest jsObjRequest = new JsonArrayRequest(Request.Method.GET, url.toString(), null, new Response.Listener<JSONArray>()
+        TraktApiClient.TraktJsonArrayRequest jsObjRequest = new TraktApiClient.TraktJsonArrayRequest(context, Request.Method.GET, url.toString(), null, new Response.Listener<JSONArray>()
         {
 
             @Override
             public void onResponse(JSONArray response)
             {
+                if (progressBar != null) progressBar.setVisibility(View.GONE);
                 Log.d("response", response.toString());
 
                 Gson gson = new Gson();
@@ -109,21 +112,10 @@ public class ExploreFragment extends Fragment
             @Override
             public void onErrorResponse(VolleyError error)
             {
+                if (progressBar != null) progressBar.setVisibility(View.GONE);
                 Log.e("VolleyError", error.getMessage());
             }
-        })
-        {
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError
-            {
-                Map<String, String> params = new HashMap<String, String>();
-                params.put("Content-Type", "application/json");
-                params.put("trakt-api-version", "2");
-                params.put("trakt-api-key", RestConstants.clientID);
-
-                return params;
-            }
-        };
+        });
 
         TraktService.getInstance(context).addToRequestQueue(jsObjRequest);
     }

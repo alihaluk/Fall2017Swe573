@@ -14,6 +14,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
@@ -36,6 +37,7 @@ import tr.edu.boun.bingedtv.adapters.WatchedShowsAdapter;
 import tr.edu.boun.bingedtv.controls.SearchActivity;
 import tr.edu.boun.bingedtv.models.responseobjects.WatchedShow;
 import tr.edu.boun.bingedtv.models.responseobjects.WatchedShowItem;
+import tr.edu.boun.bingedtv.services.TraktApiClient;
 import tr.edu.boun.bingedtv.services.restservices.RestConstants;
 import tr.edu.boun.bingedtv.services.restservices.TraktService;
 
@@ -45,6 +47,7 @@ public class ShowsFragment extends Fragment
 {
     private Context context;
     private RecyclerView recyclerView;
+    private ProgressBar progressBar;
 
     public ShowsFragment()
     {
@@ -77,14 +80,13 @@ public class ShowsFragment extends Fragment
     {
         View view = inflater.inflate(R.layout.fragment_shows, container, false);
 
-        // Set the adapter
-        if(view instanceof RecyclerView)
+        context = view.getContext();
+        recyclerView = view.findViewById(R.id.list);
+        progressBar = view.findViewById(R.id.progressBar);
+
+        if (recyclerView != null)
         {
-            context = view.getContext();
-            recyclerView = (RecyclerView) view;
-
             recyclerView.setLayoutManager(new LinearLayoutManager(context));
-
             GetWatchedShowsProgress();
         }
         return view;
@@ -116,17 +118,19 @@ public class ShowsFragment extends Fragment
 
     public void GetWatchedShowsProgress()
     {
+        if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
         recyclerView.setAdapter(new WatchedShowsAdapter(new ArrayList<WatchedShowItem>()));
 
         StringBuilder url = new StringBuilder();
         url.append(RestConstants.baseServiceAddress).append("sync").append("/").append("watched").append("/").append("shows?extended=noseasons");
 
-        JsonArrayRequest jsObjRequest = new JsonArrayRequest(Request.Method.GET, url.toString(), null, new Response.Listener<JSONArray>()
+        TraktApiClient.TraktJsonArrayRequest jsObjRequest = new TraktApiClient.TraktJsonArrayRequest(context, Request.Method.GET, url.toString(), null, new Response.Listener<JSONArray>()
         {
 
             @Override
             public void onResponse(JSONArray response)
             {
+                if (progressBar != null) progressBar.setVisibility(View.GONE);
                 Log.d("response", response.toString());
 
                 Gson gson = new Gson();
@@ -141,7 +145,7 @@ public class ShowsFragment extends Fragment
                             .append("/").append("progress")
                             .append("/").append("watched?hidden=false&specials=false&count_specials=false");
 
-                    final MyShowJsonObjectRequest jsObjRequest = new MyShowJsonObjectRequest(Request.Method.GET, url.toString(), null, new Response.Listener<JSONObject>()
+                    TraktApiClient.TraktJsonObjectRequest jsObjRequest = new TraktApiClient.TraktJsonObjectRequest(context, Request.Method.GET, url.toString(), null, new Response.Listener<JSONObject>()
                     {
 
                         @Override
@@ -178,23 +182,7 @@ public class ShowsFragment extends Fragment
                         {
                             Log.e("VolleyError", error.getMessage());
                         }
-                    })
-                    {
-                        @Override
-                        public Map<String, String> getHeaders() throws AuthFailureError
-                        {
-                            SharedPreferences sp = context.getSharedPreferences("credentials", MODE_PRIVATE);
-
-                            Map<String, String> params = new HashMap<String, String>();
-                            params.put("Content-Type", "application/json");
-                            params.put("trakt-api-version", "2");
-                            params.put("trakt-api-key", RestConstants.clientID);
-                            params.put("Authorization", "Bearer " + sp.getString("access_token",""));
-
-                            return params;
-                        }
-                    };
-                    jsObjRequest.SetShowInfo(show.show.ids.trakt.toString(), show.show.title);
+                    });
 
                     TraktService.getInstance(context).addToRequestQueue(jsObjRequest);
 
@@ -207,42 +195,11 @@ public class ShowsFragment extends Fragment
             @Override
             public void onErrorResponse(VolleyError error)
             {
+                if (progressBar != null) progressBar.setVisibility(View.GONE);
                 Log.e("VolleyError", error.getMessage());
             }
-        })
-        {
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError
-            {
-                SharedPreferences sp = context.getSharedPreferences("credentials", MODE_PRIVATE);
-
-                Map<String, String> params = new HashMap<String, String>();
-                params.put("Content-Type", "application/json");
-                params.put("trakt-api-version", "2");
-                params.put("trakt-api-key", RestConstants.clientID);
-                params.put("Authorization", "Bearer " + sp.getString("access_token",""));
-
-                return params;
-            }
-        };
+        });
 
         TraktService.getInstance(context).addToRequestQueue(jsObjRequest);
-    }
-
-    public class MyShowJsonObjectRequest extends JsonObjectRequest
-    {
-        String ShowID;
-        String ShowName;
-
-        public void SetShowInfo(String showID, String name)
-        {
-            ShowID = showID;
-            ShowName = name;
-        }
-
-        public MyShowJsonObjectRequest(int method, String url, JSONObject jsonRequest, Response.Listener<JSONObject> listener, Response.ErrorListener errorListener)
-        {
-            super(method, url, jsonRequest, listener, errorListener);
-        }
     }
 }

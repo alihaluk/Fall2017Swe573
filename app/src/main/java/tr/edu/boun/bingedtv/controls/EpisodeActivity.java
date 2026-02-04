@@ -33,6 +33,7 @@ import tr.edu.boun.bingedtv.models.responseobjects.ExtendedShowInfo;
 import tr.edu.boun.bingedtv.models.standardmediaobjects.Episode;
 import tr.edu.boun.bingedtv.models.standardmediaobjects.Ids;
 import tr.edu.boun.bingedtv.models.standardmediaobjects.Show;
+import tr.edu.boun.bingedtv.services.TraktApiClient;
 import tr.edu.boun.bingedtv.services.restservices.RestConstants;
 import tr.edu.boun.bingedtv.services.restservices.TraktService;
 
@@ -141,7 +142,7 @@ public class EpisodeActivity extends AppCompatActivity
                 .append("/").append("episodes").append("/").append(mCurrentEpisodeNumber)
                 .append("?extended=full");
 
-        JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.GET, url.toString(), null, new Response.Listener<JSONObject>()
+        TraktApiClient.TraktJsonObjectRequest jsObjRequest = new TraktApiClient.TraktJsonObjectRequest(mContext, Request.Method.GET, url.toString(), null, new Response.Listener<JSONObject>()
         {
 
             @Override
@@ -175,19 +176,7 @@ public class EpisodeActivity extends AppCompatActivity
             {
                 Log.e("VolleyError", error.getMessage());
             }
-        })
-        {
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError
-            {
-                Map<String, String> params = new HashMap<String, String>();
-                params.put("Content-Type", "application/json");
-                params.put("trakt-api-version", "2");
-                params.put("trakt-api-key", RestConstants.clientID);
-
-                return params;
-            }
-        };
+        });
 
         TraktService.getInstance(mContext).addToRequestQueue(jsObjRequest);
     }
@@ -215,20 +204,25 @@ public class EpisodeActivity extends AppCompatActivity
          }
          */
 
-        Gson gson = new Gson();
-        String showParam = gson.toJson(mCurrentEpisode.ids);
-
-        JSONObject jsonRequest = null;
+        JSONObject jsonRequest = new JSONObject();
         try
         {
-            String paramStr = "{episodes:[{ids:" + showParam + "}]}";
-            jsonRequest = new JSONObject(paramStr);
+            Gson gson = new Gson();
+            JSONObject ids = new JSONObject(gson.toJson(mCurrentEpisode.ids));
+            JSONObject episode = new JSONObject();
+            episode.put("ids", ids);
+
+            org.json.JSONArray episodes = new org.json.JSONArray();
+            episodes.put(episode);
+
+            jsonRequest.put("episodes", episodes);
         } catch(JSONException e)
         {
             e.printStackTrace();
+            return;
         }
 
-        JsonObjectRequest jsObjRequest = new JsonObjectRequest(Request.Method.POST, url.toString(), jsonRequest, new Response.Listener<JSONObject>()
+        TraktApiClient.TraktJsonObjectRequest jsObjRequest = new TraktApiClient.TraktJsonObjectRequest(mContext, Request.Method.POST, url.toString(), jsonRequest, new Response.Listener<JSONObject>()
         {
 
             @Override
@@ -238,9 +232,9 @@ public class EpisodeActivity extends AppCompatActivity
 
                 try
                 {
-                    if (response.getJSONObject("added") != null)
+                    if (response.has("added"))
                     {
-                        Toast.makeText(mContext, "Season binged successfully!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(mContext, "Episode marked as watched!", Toast.LENGTH_SHORT).show();
                     }
                     else
                     {
@@ -248,7 +242,7 @@ public class EpisodeActivity extends AppCompatActivity
                     }
 
 
-                } catch(JSONException e)
+                } catch(Exception e)
                 {
                     e.printStackTrace();
                 }
@@ -259,24 +253,10 @@ public class EpisodeActivity extends AppCompatActivity
             @Override
             public void onErrorResponse(VolleyError error)
             {
-
+                Log.e("VolleyError", error.toString());
+                Toast.makeText(mContext, "Failed to mark episode as watched.", Toast.LENGTH_SHORT).show();
             }
-        })
-        {
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError
-            {
-                SharedPreferences sp = getApplicationContext().getSharedPreferences("credentials", MODE_PRIVATE);
-
-                Map<String, String> params = new HashMap<String, String>();
-                params.put("Content-Type", "application/json");
-                params.put("trakt-api-version", "2");
-                params.put("trakt-api-key", RestConstants.clientID);
-                params.put("Authorization", "Bearer " + sp.getString("access_token",""));
-
-                return params;
-            }
-        };
+        });
 
         TraktService.getInstance(mContext).addToRequestQueue(jsObjRequest);
 
