@@ -108,16 +108,16 @@ public class EpisodeActivity extends AppCompatActivity
             return true;
         } else if (item.getItemId() == R.id.episode_watched_action) {
 
-            AlertDialog.Builder alert = new AlertDialog.Builder(mContext).setTitle("Did you watched the episode?");
-            alert.setMessage("marks as watched the episode");
-            alert.setPositiveButton("YES", new DialogInterface.OnClickListener()
+            AlertDialog.Builder alert = new AlertDialog.Builder(mContext).setTitle("Did you watch the episode?");
+            alert.setMessage("Mark this episode as watched?");
+            alert.setPositiveButton("Yes", new DialogInterface.OnClickListener()
             {
                 public void onClick(DialogInterface dialog, int id)
                 {
                     setWatchedEpisode();
                 }
             });
-            alert.setNegativeButton("NO", new DialogInterface.OnClickListener() {
+            alert.setNegativeButton("No", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i)
                 {

@@ -93,7 +93,7 @@ public class UpcomingFragment extends Fragment
     public void GetUpcomingShows()
     {
         if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
-        java.text.DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.GERMAN);
+        java.text.DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
         java.util.Date cal = Calendar.getInstance().getTime();
 
         String start_date = dateFormat.format(cal);
@@ -103,7 +103,7 @@ public class UpcomingFragment extends Fragment
         StringBuilder url = new StringBuilder();
         url.append(RestConstants.baseServiceAddress).append("calendars").append("/").append("my").append("/").append("shows").append("/").append(start_date).append("/").append(days);
 
-        TraktApiClient.TraktJsonArrayRequest jsObjRequest = new TraktApiClient.TraktJsonArrayRequest(context, Request.Method.GET, url.toString(), null, new Response.Listener<JSONArray>()
+        TraktApiClient.TraktJsonArrayRequest jsObjRequest = TraktApiClient.getArrayRequest(context, url.toString(), new Response.Listener<JSONArray>()
         {
 
             @Override

@@ -29,6 +29,7 @@ import tr.edu.boun.bingedtv.adapters.ShowCastAdapter;
 import tr.edu.boun.bingedtv.adapters.ShowCommentAdapter;
 import tr.edu.boun.bingedtv.models.responseobjects.ShowComment;
 import tr.edu.boun.bingedtv.models.responseobjects.ShowPeople;
+import tr.edu.boun.bingedtv.services.TraktApiClient;
 import tr.edu.boun.bingedtv.services.restservices.RestConstants;
 import tr.edu.boun.bingedtv.services.restservices.TraktService;
 
@@ -80,7 +81,7 @@ public class ShowCommentsActivity extends AppCompatActivity
                     .append("/").append("comments/newest");
         }
 
-        JsonArrayRequest jsObjRequest = new JsonArrayRequest(Request.Method.GET, url.toString(), null, new Response.Listener<JSONArray>()
+        JsonArrayRequest jsObjRequest = TraktApiClient.getArrayRequest(context, url.toString(), new Response.Listener<JSONArray>()
         {
 
             @Override
@@ -103,19 +104,7 @@ public class ShowCommentsActivity extends AppCompatActivity
             {
                 Log.e("VolleyError", error.getMessage());
             }
-        })
-        {
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError
-            {
-                Map<String, String> params = new HashMap<String, String>();
-                params.put("Content-Type", "application/json");
-                params.put("trakt-api-version", "2");
-                params.put("trakt-api-key", RestConstants.clientID);
-
-                return params;
-            }
-        };
+        });
 
         TraktService.getInstance(context).addToRequestQueue(jsObjRequest);
     }
